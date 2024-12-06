@@ -1,5 +1,6 @@
 // import { useState } from "react";
-import { Form } from "react-router-dom";
+import { Form, redirect, useActionData, useNavigate } from "react-router-dom";
+import { createOrder } from "../../services/apiRestaurant";
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -32,6 +33,10 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
+  const navigation = useNavigate();
+  const isSubmitting = navigation.state === "submitting";
+
+  const formErrors = useActionData();
   // const [withPriority, setWithPriority] = useState(false);
   const cart = fakeCart;
 
@@ -39,7 +44,7 @@ function CreateOrder() {
     <div>
       <h2>Ready to order? Let's go!</h2>
 
-      {/* <Form method="POST"  action="/order/new"> */}
+      {/* <Form method="POST"  action="/order/new"> we can use all methods . but not use the get method*/}
       <Form method="POST" action="/order/new">
         <div>
           <label>First Name</label>
@@ -51,6 +56,7 @@ function CreateOrder() {
           <div>
             <input type="tel" name="phone" required />
           </div>
+          {formErrors?.phone && <p>{formErrors.phone}</p>}
         </div>
 
         <div>
@@ -72,7 +78,10 @@ function CreateOrder() {
         </div>
 
         <div>
-          <button>Order now</button>
+          <input type="hidden" name="cart" value={JSON.stringify(cart)} />
+          <button disabled={isSubmitting}>
+            {isSubmitting ? "Plaing Order ..." : "Order now"}
+          </button>
         </div>
       </Form>
     </div>
@@ -82,8 +91,24 @@ function CreateOrder() {
 export async function action({ request }) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
-  console.log(data);
-  return null;
+
+  const order = {
+    ...data,
+    cart: JSON.parse(data.cart),
+    priority: data.priority === "on",
+  };
+
+  const error = {};
+
+  if (!isValidPhone(order.phone)) {
+    error.phone = "Please Give a Correct Phone Number";
+  }
+
+  if (Object.keys(error).length > 0) return error;
+
+  const newOrder = await createOrder(order);
+
+  return redirect(`/order/${newOrder.id}`);
 }
 
 export default CreateOrder;
