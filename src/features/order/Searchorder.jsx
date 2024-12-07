@@ -19,6 +19,7 @@ export const Searchorder = () => {
         placeholder="Search Your Order"
         value={qurey}
         onChange={(e) => setQuery(e.target.value)}
+        className="rounded border-none bg-slate-300 text-center text-gray-600"
       />
     </form>
   );
